@@ -148,7 +148,7 @@ function WordCollector(actualWord, vocabulary){
             if(!alreadyFoundWords.hasOwnProperty(i)){
                 continue;
             }
-            alreadyFoundWordsContainer.innerHTML += i + " | " + alreadyFoundWords[i] + " очков<hr>";
+            alreadyFoundWordsContainer.innerHTML = i + " | " + alreadyFoundWords[i] + " очков<hr>" + alreadyFoundWordsContainer.innerHTML;
         }
     };
 
