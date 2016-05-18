@@ -1,5 +1,4 @@
 function WordCollector(actualWord, vocabulary){
-    var _this = this;
     var dictionary,
         alreadyFoundWords,
         alreadyFoundWordsContainer,
@@ -8,16 +7,22 @@ function WordCollector(actualWord, vocabulary){
         wordContainer,
         currentWordContainer,
         score,
-        scoreBar;
+        scoreBar,
+        lastUniqueId;
 
+    /**
+     * Основная инициализация(конструктор "класса")
+     */
     var initialize = function(){
-        //Actual vocabulary initialize
+        //Записываем словарь со входа в переменную
         dictionary = vocabulary;
-        //Active base word splited into array of letters
+        delete dictionary[actualWord]; //Убираем из словаря текущее слово
+        lastUniqueId = 0; //Уникальный идентфикатор для элементов, на которых висят обработчики
+        //Разбиваем текущее слово на массив букв
         word = actualWord.split('');
-        //Current input word(tis container for temp letters)
+        //Объект с текущими выбраными игроком буквами
         currentWord  = {};
-        //List of words that have been matched
+        //Список слов, которые уже упоминались за игру
         alreadyFoundWords = {};
 
         createWordContainer();
@@ -32,6 +37,9 @@ function WordCollector(actualWord, vocabulary){
     };
 
 
+    /**
+     * Создаем контейнер для текущего актуального слова
+     */
     var createWordContainer = function(){
         wordContainer  = document.createElement("div");
         wordContainer.style.textAlign = "center";
@@ -40,31 +48,13 @@ function WordCollector(actualWord, vocabulary){
             if(!word.hasOwnProperty(i)){
                 continue;
             }
-            var letter       = createLetterTemplate(word[i]);
-            letter.id        = "pos-" + ++i; --i;
+            var letter = createLetterTemplate(word[i]);
+            //Подвязываем необходимые обработчики
+            bindLetterHandlers(letter);
 
-            letter.onclick   = function(){
-                var isActive = this.getAttribute("isactive");
-                isActive = Math.pow(isActive, isActive) - isActive;
-                this.setAttribute("isactive", isActive);
-
-                if(this.getAttribute("isactive") == 1){
-                    currentWord[this.id] = this.innerHTML;
-                    this.style.backgroundColor = "rgba(191, 255, 201, 0.6)";
-                } else{
-                    delete currentWord[this.id];
-                    this.style.backgroundColor = "transparent";
-                }
-
-                renderCurrentWordContainer();
-            };
-
-            letter.toDefault = function(){
-                this.style.backgroundColor = "transparent";
-                this.setAttribute("isactive", 0);
-            };
-
+            //Добавляем в список доступных к использованию букв
             letters.push(letter);
+            //Добавляем букву в контейнер с текущим словом
             wordContainer.appendChild(letter);
         }
 
@@ -73,11 +63,14 @@ function WordCollector(actualWord, vocabulary){
                 if(!letters.hasOwnProperty(i)){
                     continue;
                 }
-                letters[i].toDefault();
+                letters[i].setInactive();
             }
         }
     };
 
+    /**
+     * Создаем контейнер для текущего введенного слова
+     */
     var createCurrentWordContainer = function(){
         currentWordContainer = document.createElement("div");
         currentWordContainer.style.textAlign = "center";
@@ -85,20 +78,68 @@ function WordCollector(actualWord, vocabulary){
     };
 
 
-    var createLetterTemplate = function(htmlContent){
+    /**
+     * Создаем экземпляр нового элемента, в котором содержится буква
+     *
+     * @param  {string} letter непосредственно сама буква
+     * @returns {Element}
+     */
+    var createLetterTemplate = function(letter){
         var letterTemplate = document.createElement("span");
-        letterTemplate.setAttribute("isactive", "0");
         letterTemplate.style.padding      = "0px 20px 4px";
         letterTemplate.style.borderRadius = "5px";
         letterTemplate.style.border       = "1px solid gray";
         letterTemplate.style.margin       = "0 3px";
         letterTemplate.style.cursor       = "pointer";
         letterTemplate.style.fontSize     = "40px";
-        letterTemplate.innerHTML          = htmlContent;
+        letterTemplate.innerHTML          = letter;
 
         return letterTemplate;
     };
 
+    /**
+     * Подвязывает все необходимые обработчики на элемент, внутри которого содержится буква
+     *
+     * @param {object} letter DOM-элемент с буквой
+     */
+    var bindLetterHandlers = function(letter){
+
+        letter.active = false;
+        //Идентификатор должен быть буквенным, чтобы его обозначение не превращалось в индекс массива и корректно обрабатывались
+        //удаление и добвление букв посреди написанного слова
+        letter.identifier     = 'letter' + ++lastUniqueId;
+
+        //Добавляем возможность переключать кнопку на активное состояние
+        letter.setActive = function(){
+            this.active = true;
+            currentWord[this.identifier] = this.innerHTML;
+            this.style.backgroundColor = "rgba(191, 255, 201, 0.6)";
+        };
+
+        //Добавляем возможность "сбросить" отображение к исходному(неактивному) значению
+        letter.setInactive = function(){
+            this.active = false;
+            //Иначе удаляем ее из текущего вводимого слова
+            delete currentWord[this.identifier];
+            //И откатываем отображение к исходному
+            this.style.backgroundColor = "transparent";
+        };
+
+
+        //Вешаем обработчик при клике на элемент
+        letter.onclick   = function(){
+            this.active ? this.setInactive() : this.setActive();
+
+            //Проверяем, сложилось ли слово после очередной добавленной или убранной буквы
+            checkValidWord();
+            //После каждого изменения статуса буквы, "отрисовываем" контейнер с вводимым словом
+            renderCurrentWordContainer();
+        };
+    };
+
+    /**
+     * Создает "табло" с текущим счетом игрока
+     */
     var createScoreBar = function(){
         score = 0;
         scoreBar = document.createElement("span");
@@ -114,7 +155,13 @@ function WordCollector(actualWord, vocabulary){
     };
 
 
-    var increaseScore = function(word){
+    /**
+     * Возвращает количество очков, которое дается за переданное слово
+     *
+     * @param {string} word слово, для которого пытаемся подсчитать очки
+     * @returns {number} подсчитанное количество очков
+     */
+    var calculatePoints = function(word){
         var bonus = 0;
         var wordLength = word.length;
         if(wordLength > 9){
@@ -131,6 +178,17 @@ function WordCollector(actualWord, vocabulary){
         return (bonus + wordLength) * 10;
     };
 
+
+    /**
+     * Обновляет текуще количество очков игрока
+     */
+    var renderScoreBar = function(){
+        scoreBar.innerHTML = score;
+    };
+
+    /**
+     * Создает контейнер для уже найденных слов
+     */
     var createAlreadyFoundWordsContainer = function(){
         alreadyFoundWordsContainer = document.createElement("div");
         alreadyFoundWordsContainer.style.margin     = "40px auto";
@@ -142,6 +200,9 @@ function WordCollector(actualWord, vocabulary){
         alreadyFoundWordsContainer.style.boxShadow  = "2px 2px 10px black";
     };
 
+    /**
+     * Обновляет контейнер с даными о уже найденных словах
+     */
     var renderAlreadyFoundWordsContainer = function(){
         alreadyFoundWordsContainer.innerHTML = '';
         for(var i in alreadyFoundWords){
@@ -152,34 +213,40 @@ function WordCollector(actualWord, vocabulary){
         }
     };
 
-    var renderScoreBar = function(){
-        scoreBar.innerHTML = score;
-    };
 
-
+    /**
+     * Обновляет контейнер с вводимым словом
+     */
     var renderCurrentWordContainer = function(){
         currentWordContainer.innerHTML = '';
-        var checker = '';
         for(var j in currentWord){
             if(!currentWord.hasOwnProperty(j)){
                 continue;
             }
             var newLetter = createLetterTemplate(currentWord[j]);
-            checker += currentWord[j];
             currentWordContainer.appendChild(newLetter);
         }
-
-        checkCorrectWord(checker);
     };
 
-    var checkCorrectWord = function(word){
+    /**
+     * Проверяет уже введенное слово на валидность.
+     * Проводит вcе необходимое пост-операции(рендер, подсчет очков) при нахождении совпадения в словаре
+     */
+    var checkValidWord = function(){
+        var word = '';
+        for(var j in currentWord) {
+            if(!currentWord.hasOwnProperty(j)){
+                continue;
+            }
+            word += currentWord[j];
+        }
+
         if(dictionary.hasOwnProperty(word)){
             //Increases current score and also set value of word in list of already found
-            alreadyFoundWords[word] = increaseScore(word);
+            alreadyFoundWords[word] = calculatePoints(word);
             delete dictionary[word];
             currentWord = {};
             wordContainer.toDefault();
-            renderCurrentWordContainer();
             renderScoreBar();
             renderAlreadyFoundWordsContainer();
         }
