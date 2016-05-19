@@ -15,13 +15,15 @@ function WordCollector(actualWord, vocabulary){
         score,
         scoreBar,
         letterSizeDelta,
-        lastUniqueId;
+        lastUniqueId,
+        eventsDisabled;
 
     /**
      * Основная инициализация(конструктор "класса")
      */
     var initialize = function(){
 
+        eventsDisabled = false;
         //Устанавливаем параметры отображения для мобильных устройств
         configureViewport();
         //Записываем словарь со входа в переменную
@@ -165,6 +167,10 @@ function WordCollector(actualWord, vocabulary){
 
         //Вешаем обработчик при клике на элемент
         letter.onclick   = function(){
+            if(eventsDisabled){
+                return;
+            }
+
             this.active ? this.setInactive() : this.setActive();
 
             //Проверяем, сложилось ли слово после очередной добавленной или убранной буквы
@@ -288,6 +294,10 @@ function WordCollector(actualWord, vocabulary){
             renderScoreBar();
             renderAlreadyFoundWordsContainer();
         }
+    };
+
+    this.disableEvents = function(){
+        eventsDisabled = true;
     };
 
 

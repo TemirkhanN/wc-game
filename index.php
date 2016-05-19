@@ -47,10 +47,23 @@ $word = $_SESSION['baseWord'];
 
 <script>
     (function() {
-        var baseWord   = '<?=$word?>';
-        var dictionary = JSON.parse('<?=json_encode(array_flip($dictionary))?>');
+        var baseWord      = '<?=$word?>'; //Слово, из букв которого будем собирать другие слова
+        //Словарь слов, по которому проверяем введенные слова. Проблемное место - занимает много памяти
+        var dictionary    = JSON.parse('<?=json_encode(array_flip($dictionary), JSON_UNESCAPED_UNICODE)?>');
+        var roundDuration = 5; //Время раунда в минутах
+        roundDuration    *= 60;
 
-        new WordCollector(baseWord, dictionary);
+        var collector = new WordCollector(baseWord, dictionary);
+
+        var timer = setInterval(function(){
+            if(roundDuration === 0){
+                clearInterval(timer);
+                collector.disableEvents();
+                alert('Время игры истекло');
+            } else{
+                --roundDuration;
+            }
+        }, 1000);
     })();
 </script>
 </html>
