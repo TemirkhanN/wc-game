@@ -1,19 +1,29 @@
+/**
+ *
+ * @param {string} actualWord
+ * @param {object} vocabulary
+ * @constructor
+ */
 function WordCollector(actualWord, vocabulary){
     var dictionary,
         alreadyFoundWords,
         alreadyFoundWordsContainer,
         word,
-        currentWord,
         wordContainer,
+        currentWord,
         currentWordContainer,
         score,
         scoreBar,
+        letterSizeDelta,
         lastUniqueId;
 
     /**
      * Основная инициализация(конструктор "класса")
      */
     var initialize = function(){
+
+        //Устанавливаем параметры отображения для мобильных устройств
+        configureViewport();
         //Записываем словарь со входа в переменную
         dictionary = vocabulary;
         delete dictionary[actualWord]; //Убираем из словаря текущее слово
@@ -25,6 +35,8 @@ function WordCollector(actualWord, vocabulary){
         //Список слов, которые уже упоминались за игру
         alreadyFoundWords = {};
 
+        letterSizeDelta = (window.innerWidth/(word.length)/90).toFixed(2);
+
         createWordContainer();
         createCurrentWordContainer();
         createScoreBar();
@@ -34,6 +46,31 @@ function WordCollector(actualWord, vocabulary){
         document.body.appendChild(currentWordContainer);
         document.body.appendChild(alreadyFoundWordsContainer);
         document.body.appendChild(scoreBar);
+    };
+
+
+    var configureViewport = function(){
+        var viewportMeta = document.querySelector("meta[name=viewport]");
+        if(viewportMeta){
+            viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0');
+        } else {
+            viewportMeta =document.createElement('meta');
+            viewportMeta.name = "viewport";
+            viewportMeta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0";
+            document.getElementsByTagName('head')[0].appendChild(viewportMeta);
+        }
+    };
+
+    /**
+     * Возвращает "пропорциональное" значение для элементов с буквами
+     *
+     * Таким образом пытаемся уместить слово на любом экране
+     *
+     * @param {number} value
+     * @returns {number}
+     */
+    var deltaAffected = function(value){
+        return letterSizeDelta * value;
     };
 
 
@@ -86,12 +123,12 @@ function WordCollector(actualWord, vocabulary){
      */
     var createLetterTemplate = function(letter){
         var letterTemplate = document.createElement("span");
-        letterTemplate.style.padding      = "0px 20px 4px";
-        letterTemplate.style.borderRadius = "5px";
-        letterTemplate.style.border       = "1px solid gray";
-        letterTemplate.style.margin       = "0 3px";
         letterTemplate.style.cursor       = "pointer";
-        letterTemplate.style.fontSize     = "40px";
+        letterTemplate.style.padding      = "0px " + deltaAffected(22) + "px " + deltaAffected(6) + "px";
+        letterTemplate.style.borderRadius = deltaAffected(5) + "px";
+        letterTemplate.style.border       = "1px solid gray";
+        letterTemplate.style.margin       = "0 " + deltaAffected(3) + "px";
+        letterTemplate.style.fontSize     = deltaAffected(60) + "px";
         letterTemplate.innerHTML          = letter;
 
         return letterTemplate;
@@ -144,12 +181,12 @@ function WordCollector(actualWord, vocabulary){
         score = 0;
         scoreBar = document.createElement("span");
         scoreBar.style.boxShadow = "0 0 3px green";
-        scoreBar.style.border = "1px solid rgba(0,255,0, 0.8)";
+        scoreBar.style.border    = "1px solid rgba(0,255,0, 0.8)";
         scoreBar.style.color     = "green";
         scoreBar.style.padding   = "0 15px 0";
         scoreBar.style.fontSize  = "37px";
         scoreBar.style.position  = "fixed";
-        scoreBar.style.top       = "1%";
+        scoreBar.style.bottom    = "1%";
         scoreBar.style.left      = "1%";
         renderScoreBar();
     };
@@ -183,7 +220,7 @@ function WordCollector(actualWord, vocabulary){
      * Обновляет текуще количество очков игрока
      */
     var renderScoreBar = function(){
-        scoreBar.innerHTML = score;
+        scoreBar.innerHTML = 'Счет: ' + score;
     };
 
     /**
@@ -193,6 +230,7 @@ function WordCollector(actualWord, vocabulary){
         alreadyFoundWordsContainer = document.createElement("div");
         alreadyFoundWordsContainer.style.margin     = "40px auto";
         alreadyFoundWordsContainer.style.fontSize   = "32px";
+        alreadyFoundWordsContainer.style.maxWidth   = "95%";
         alreadyFoundWordsContainer.style.width      = "400px";
         alreadyFoundWordsContainer.style.height     = "400px";
         alreadyFoundWordsContainer.style.overflowY  = "scroll";
