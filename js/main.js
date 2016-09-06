@@ -1,10 +1,9 @@
 /**
  *
- * @param {string} actualWord
- * @param {object} vocabulary
+ * @param {Array} vocabulary
  * @constructor
  */
-function WordCollector(actualWord, vocabulary){
+function WordCollector(vocabulary){
     var dictionary,
         alreadyFoundWords,
         alreadyFoundWordsContainer,
@@ -18,20 +17,20 @@ function WordCollector(actualWord, vocabulary){
         lastUniqueId,
         eventsDisabled;
 
+    var wcollector = this;
+
     /**
      * Основная инициализация(конструктор "класса")
      */
     var initialize = function(){
-
+        //Записываем словарь со входа в переменную
+        dictionary = vocabulary;
+        
         eventsDisabled = false;
         //Устанавливаем параметры отображения для мобильных устройств
         configureViewport();
-        //Записываем словарь со входа в переменную
-        dictionary = vocabulary;
-        delete dictionary[actualWord]; //Убираем из словаря текущее слово
+        setCurrentWord();
         lastUniqueId = 0; //Уникальный идентфикатор для элементов, на которых висят обработчики
-        //Разбиваем текущее слово на массив букв
-        word = actualWord.split('');
         //Объект с текущими выбраными игроком буквами
         currentWord  = {};
         //Список слов, которые уже упоминались за игру
@@ -285,14 +284,36 @@ function WordCollector(actualWord, vocabulary){
             word += currentWord[j];
         }
 
-        if(dictionary.hasOwnProperty(word)){
+        if(dictionary.indexOf(word) !== -1){
             //Increases current score and also set value of word in list of already found
             alreadyFoundWords[word] = calculatePoints(word);
-            delete dictionary[word];
+            wcollector.removeWordFromDictionary(word);
             currentWord = {};
             wordContainer.toDefault();
             renderScoreBar();
             renderAlreadyFoundWordsContainer();
+        }
+    };
+
+    var setCurrentWord = function(){
+        var wordsPool = [];
+        for(var i=0; i<dictionary.length; i++){
+            if(dictionary[i].length > 7){
+                wordsPool.push(dictionary[i]);
+            }
+        }
+        var actualWord = wordsPool[Math.floor(Math.random()*wordsPool.length)];
+        //Убираем из словаря текущее слово
+        wcollector.removeWordFromDictionary(actualWord);
+        //Разбиваем текущее слово на массив букв
+        word = actualWord.split('');
+    };
+
+    this.removeWordFromDictionary = function(word){
+        var pos = dictionary.indexOf(word);
+
+        if(pos !== -1){
+            dictionary.splice(pos, 1);
         }
     };
 

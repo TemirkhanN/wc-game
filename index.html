@@ -1,32 +1,3 @@
-<?php
-session_start();
-
-$randomWordsMinLength = 8;
-
-$dictionary = file(__DIR__ . '/dictionary.txt');
-
-$longWords = [];
-
-array_walk($dictionary, function (&$word) use(&$longWords, $randomWordsMinLength){
-    $word = trim($word);
-    if ( mb_strlen($word) > $randomWordsMinLength ) {
-        $longWords[] = $word;
-    }
-});
-
-if(isset($_GET['new_word'])){
-    $_SESSION['baseWord'] = '';
-    header("Location:" . strtok($_SERVER["REQUEST_URI"],'?'));
-    exit();
-}
-
-
-if(empty($_SESSION['baseWord'])) {
-    $_SESSION['baseWord'] = $longWords[array_rand($longWords)];
-}
-
-$word = $_SESSION['baseWord'];
-?>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -47,13 +18,36 @@ $word = $_SESSION['baseWord'];
 
 <script>
     (function() {
-        var baseWord      = '<?=$word?>'; //Слово, из букв которого будем собирать другие слова
         //Словарь слов, по которому проверяем введенные слова. Проблемное место - занимает много памяти
-        var dictionary    = JSON.parse('<?=json_encode(array_flip($dictionary), JSON_UNESCAPED_UNICODE)?>');
+        var dictionary = (function(dictionaryFile){
+            var req = null;
+            try {
+                req = new ActiveXObject("Msxml2.XMLHTTP");
+            } catch (e) {
+                try {
+                    req = new ActiveXObject("Microsoft.XMLHTTP");
+                } catch (e) {
+                    try {
+                        req = new XMLHttpRequest(); }
+                    catch(e) {
+
+                    }
+                }
+            }
+            if (req == null) {
+                throw new Error('XMLHttpRequest not supported');
+            }
+
+            req.open("GET", dictionaryFile, false);
+            req.send(null);
+
+            return req.responseText.split('\n');
+        })('dictionary.txt');
+
         var roundDuration = 5; //Время раунда в минутах
         roundDuration    *= 60;
 
-        var collector = new WordCollector(baseWord, dictionary);
+        var collector = new WordCollector(dictionary);
 
         var timer = setInterval(function(){
             if(roundDuration === 0){
