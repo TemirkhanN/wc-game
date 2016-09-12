@@ -10,6 +10,7 @@ function WordCollector(vocabulary){
         word,
         wordContainer,
         currentWord,
+        possibleCombinations,
         currentWordContainer,
         score,
         scoreBar,
@@ -284,14 +285,19 @@ function WordCollector(vocabulary){
             word += currentWord[j];
         }
 
-        if(dictionary.indexOf(word) !== -1){
+        if(possibleCombinations.indexOf(word) !== -1){
             //Increases current score and also set value of word in list of already found
             alreadyFoundWords[word] = calculatePoints(word);
-            wcollector.removeWordFromDictionary(word);
+            wcollector.markAsAlreadyFound(word);
             currentWord = {};
             wordContainer.toDefault();
             renderScoreBar();
             renderAlreadyFoundWordsContainer();
+        }
+
+        if(possibleCombinations.length === 0){
+            wcollector.disableEvents();
+            alert('Вы нашли все возможные комбинации');
         }
     };
 
@@ -303,17 +309,46 @@ function WordCollector(vocabulary){
             }
         }
         var actualWord = wordsPool[Math.floor(Math.random()*wordsPool.length)];
-        //Убираем из словаря текущее слово
-        wcollector.removeWordFromDictionary(actualWord);
         //Разбиваем текущее слово на массив букв
         word = actualWord.split('');
+        //Указываем все возможные комбинации слов из словаря для заданного слова
+        possibleCombinations = getPossibleCombinations(actualWord);
+        //Убираем из возможных вариантов текущее слово
+        wcollector.markAsAlreadyFound(actualWord);
     };
 
-    this.removeWordFromDictionary = function(word){
-        var pos = dictionary.indexOf(word);
+
+    var getPossibleCombinations = function(word){
+        var possibleCombinations = [];
+        word = word.toLowerCase();
+
+        for(var i=0; i<dictionary.length; i++){
+            var tmpBaseWord = word;
+            var tmpBaseWordChars = dictionary[i].toLowerCase().split('');
+            var possibleCombination = true;
+
+            for(var j = 0; j<tmpBaseWordChars.length; j++){
+                var pos = tmpBaseWord.indexOf(tmpBaseWordChars[j]);
+                if(pos === -1){
+                    possibleCombination = false;
+                    break;
+                }
+                tmpBaseWord = tmpBaseWord.slice(0, pos) + tmpBaseWord.slice(pos+1);
+            }
+
+            if(possibleCombination){
+                possibleCombinations.push(dictionary[i]);
+            }
+        }
+
+        return possibleCombinations;
+    };
+
+    this.markAsAlreadyFound = function(word){
+        var pos = possibleCombinations.indexOf(word);
 
         if(pos !== -1){
-            dictionary.splice(pos, 1);
+            possibleCombinations.splice(pos, 1);
         }
     };
 
