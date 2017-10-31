@@ -47,7 +47,7 @@
         var customWord = null;
 
         if (location.hash) {
-            customWord = location.hash.substr(1);
+            customWord = decodeURIComponent(location.hash.substr(1));
         }
 
         var collector = new WordCompositor(dictionary, customWord);
