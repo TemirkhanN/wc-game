@@ -1,8 +1,8 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Анаграммер</title>
-    <script type="text/javascript" src="js/main.js"></script>
+    <title>Word compositor</title>
+    <script type="text/javascript" src="js/WordCompositor.js"></script>
 </head>
 <style>
     span{
@@ -18,7 +18,7 @@
 
 <script>
     (function() {
-        //Словарь слов, по которому проверяем введенные слова. Проблемное место - занимает много памяти
+        //Словарь, по которому проверяем введенные слова. Проблемное место - занимает много памяти
         var dictionary = (function(dictionaryFile){
             var req = null;
             try {
@@ -30,12 +30,9 @@
                     try {
                         req = new XMLHttpRequest(); }
                     catch(e) {
-
+                        throw new Error('XMLHttpRequest not supported');
                     }
                 }
-            }
-            if (req == null) {
-                throw new Error('XMLHttpRequest not supported');
             }
 
             req.open("GET", dictionaryFile, false);
@@ -47,7 +44,13 @@
         var roundDuration = 5; //Время раунда в минутах
         roundDuration    *= 60;
 
-        var collector = new WordCollector(dictionary);
+        var customWord = null;
+
+        if (location.hash) {
+            customWord = location.hash.substr(1);
+        }
+
+        var collector = new WordCompositor(dictionary, customWord);
 
         var timer = setInterval(function(){
             if(roundDuration === 0){

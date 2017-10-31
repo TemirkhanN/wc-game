@@ -1,11 +1,12 @@
 /**
+ * Композитор слов
  *
- * @param {Array} vocabulary
+ * @param vocabulary
+ * @param customCurrentWord
  * @constructor
  */
-function WordCollector(vocabulary){
-    var dictionary,
-        alreadyFoundWords,
+function WordCompositor(vocabulary, customCurrentWord){
+    var alreadyFoundWords,
         alreadyFoundWordsContainer,
         word,
         wordContainer,
@@ -21,12 +22,9 @@ function WordCollector(vocabulary){
     var wcollector = this;
 
     /**
-     * Основная инициализация(конструктор "класса")
+     * Конструктор
      */
     var initialize = function(){
-        //Записываем словарь со входа в переменную
-        dictionary = vocabulary;
-        
         eventsDisabled = false;
         //Устанавливаем параметры отображения для мобильных устройств
         configureViewport();
@@ -38,7 +36,6 @@ function WordCollector(vocabulary){
         alreadyFoundWords = {};
 
         letterSizeDelta = (window.innerWidth/(word.length)/90).toFixed(2);
-
         createWordContainer();
         createCurrentWordContainer();
         createScoreBar();
@@ -50,7 +47,9 @@ function WordCollector(vocabulary){
         document.body.appendChild(scoreBar);
     };
 
-
+    /**
+     * Конфигурация окна отрисовки
+     */
     var configureViewport = function(){
         var viewportMeta = document.querySelector("meta[name=viewport]");
         if(viewportMeta){
@@ -74,7 +73,6 @@ function WordCollector(vocabulary){
     var deltaAffected = function(value){
         return letterSizeDelta * value;
     };
-
 
     /**
      * Создаем контейнер для текущего актуального слова
@@ -115,7 +113,6 @@ function WordCollector(vocabulary){
         currentWordContainer.style.textAlign = "center";
         currentWordContainer.style.marginTop = "20px";
     };
-
 
     /**
      * Создаем экземпляр нового элемента, в котором содержится буква
@@ -164,7 +161,6 @@ function WordCollector(vocabulary){
             this.style.backgroundColor = "transparent";
         };
 
-
         //Вешаем обработчик при клике на элемент
         letter.onclick   = function(){
             if(eventsDisabled){
@@ -174,7 +170,7 @@ function WordCollector(vocabulary){
             this.active ? this.setInactive() : this.setActive();
 
             //Проверяем, сложилось ли слово после очередной добавленной или убранной буквы
-            checkValidWord();
+            validateCurrentWord();
             //После каждого изменения статуса буквы, "отрисовываем" контейнер с вводимым словом
             renderCurrentWordContainer();
         };
@@ -196,7 +192,6 @@ function WordCollector(vocabulary){
         scoreBar.style.left      = "1%";
         renderScoreBar();
     };
-
 
     /**
      * Возвращает количество очков, которое дается за переданное слово
@@ -257,7 +252,6 @@ function WordCollector(vocabulary){
         }
     };
 
-
     /**
      * Обновляет контейнер с вводимым словом
      */
@@ -276,7 +270,7 @@ function WordCollector(vocabulary){
      * Проверяет уже введенное слово на валидность.
      * Проводит вcе необходимое пост-операции(рендер, подсчет очков) при нахождении совпадения в словаре
      */
-    var checkValidWord = function(){
+    var validateCurrentWord = function(){
         var word = '';
         for(var j in currentWord) {
             if(!currentWord.hasOwnProperty(j)){
@@ -286,7 +280,7 @@ function WordCollector(vocabulary){
         }
 
         if(possibleCombinations.indexOf(word) !== -1){
-            //Increases current score and also set value of word in list of already found
+            //Добавляет очки за найденное слово и вносит слово в список уже найденных
             alreadyFoundWords[word] = calculatePoints(word);
             wcollector.markAsAlreadyFound(word);
             currentWord = {};
@@ -297,34 +291,53 @@ function WordCollector(vocabulary){
 
         if(possibleCombinations.length === 0){
             wcollector.disableEvents();
-            alert('Вы нашли все возможные комбинации');
+            alert('Вы нашли все возможные комбинации! Так держать!');
         }
     };
 
+    /**
+     * Устанавливает текущее слово, из которого будут собираться другие
+     */
     var setCurrentWord = function(){
-        var wordsPool = [];
-        for(var i=0; i<dictionary.length; i++){
-            if(dictionary[i].length > 7){
-                wordsPool.push(dictionary[i]);
+        var actualWord = '';
+
+        if (customCurrentWord == null) {
+            var wordsPool = [];
+            for (var i = 0; i < vocabulary.length; i++) {
+                if (vocabulary[i].length > 7) {
+                    wordsPool.push(vocabulary[i]);
+                }
             }
+            actualWord = wordsPool[Math.floor(Math.random() * wordsPool.length)];
+        } else {
+            actualWord = customCurrentWord;
         }
-        var actualWord = wordsPool[Math.floor(Math.random()*wordsPool.length)];
         //Разбиваем текущее слово на массив букв
         word = actualWord.split('');
         //Указываем все возможные комбинации слов из словаря для заданного слова
         possibleCombinations = getPossibleCombinations(actualWord);
+
+        if (!possibleCombinations.length) {
+            alert('К сожалению у этого слова нет комбинаций в словаре');
+        }
+
         //Убираем из возможных вариантов текущее слово
         wcollector.markAsAlreadyFound(actualWord);
     };
 
-
+    /**
+     * Возвращает список всех возможных слов, получаемых комбинацией букв из переданного слова
+     *
+     * @param word
+     * @returns {Array}
+     */
     var getPossibleCombinations = function(word){
         var possibleCombinations = [];
         word = word.toLowerCase();
 
-        for(var i=0; i<dictionary.length; i++){
+        for(var i=0; i<vocabulary.length; i++){
             var tmpBaseWord = word;
-            var tmpBaseWordChars = dictionary[i].toLowerCase().split('');
+            var tmpBaseWordChars = vocabulary[i].toLowerCase().split('');
             var possibleCombination = true;
 
             for(var j = 0; j<tmpBaseWordChars.length; j++){
@@ -337,13 +350,18 @@ function WordCollector(vocabulary){
             }
 
             if(possibleCombination){
-                possibleCombinations.push(dictionary[i]);
+                possibleCombinations.push(vocabulary[i]);
             }
         }
 
         return possibleCombinations;
     };
 
+    /**
+     * Указывает, что слово уже найдено
+     *
+     * @param word
+     */
     this.markAsAlreadyFound = function(word){
         var pos = possibleCombinations.indexOf(word);
 
@@ -352,6 +370,9 @@ function WordCollector(vocabulary){
         }
     };
 
+    /**
+     * Блокирует все возможные действия
+     */
     this.disableEvents = function(){
         eventsDisabled = true;
     };
