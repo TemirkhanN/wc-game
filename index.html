@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Word compositor</title>
-    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/WordCompositor.js"></script>
 </head>
 <style>
     span{
@@ -44,7 +44,13 @@
         var roundDuration = 5; //Время раунда в минутах
         roundDuration    *= 60;
 
-        var collector = new WordCollector(dictionary);
+        var customWord = null;
+
+        if (location.hash) {
+            customWord = location.hash.substr(1);
+        }
+
+        var collector = new WordCompositor(dictionary, customWord);
 
         var timer = setInterval(function(){
             if(roundDuration === 0){
