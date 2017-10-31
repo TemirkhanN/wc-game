@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Анаграммер</title>
+    <title>Word compositor</title>
     <script type="text/javascript" src="js/main.js"></script>
 </head>
 <style>
@@ -18,7 +18,7 @@
 
 <script>
     (function() {
-        //Словарь слов, по которому проверяем введенные слова. Проблемное место - занимает много памяти
+        //Словарь, по которому проверяем введенные слова. Проблемное место - занимает много памяти
         var dictionary = (function(dictionaryFile){
             var req = null;
             try {
@@ -30,12 +30,9 @@
                     try {
                         req = new XMLHttpRequest(); }
                     catch(e) {
-
+                        throw new Error('XMLHttpRequest not supported');
                     }
                 }
-            }
-            if (req == null) {
-                throw new Error('XMLHttpRequest not supported');
             }
 
             req.open("GET", dictionaryFile, false);
