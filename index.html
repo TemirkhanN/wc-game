@@ -56,7 +56,7 @@
             if(roundDuration === 0){
                 clearInterval(timer);
                 collector.disableEvents();
-                alert('Время игры истекло');
+                alert('Время игры истекло. Ненайденных слов: ' + collector.getRemainingCombinationsCount());
             } else{
                 --roundDuration;
             }
